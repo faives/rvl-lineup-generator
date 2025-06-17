@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="imgs\maupet.gif" type = "image/x-icon">
+  <title>i love china</title>  <style>
+    body {
+      display: flex;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #1e1e1e;
+      color: #ffffff;
+    }
+    #sidebar {
+      width: 200px;
+      padding: 20px;
+      background: #2a2a2a;
+    }
+    #court {
+      position: relative;
+      width: 600px;
+      height: 400px;
+      margin: 50px auto;
+      background: #333;
+      border: 4px solid #fff;
+      overflow: hidden;
+    }
+    .player {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: lightblue;
+      text-align: center;
+      line-height: 60px;
+      cursor: pointer;
+      font-weight: bold;
+      color: black;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+      transform: translateZ(0);
+    }
+    .player.moving {
+      transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 10;
+    }
+    .setter {
+      background: orange !important;
+    }
+    .spiker {
+      background: lightblue !important;
+    }
+    .libero {
+      background: lightgreen !important;
+    }
+    input.player-name {
+      display: block;
+      margin-bottom: 10px;
+      width: 100%;
+      background: #444;
+      color: white;
+      border: none;
+      padding: 5px;
+      border-radius: 3px;
+    }
+    button {
+      margin-top: 10px;
+      width: 100%;
+      padding: 8px;
+      background: #555;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #666;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    .rotate-animation {
+      animation: pulse 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <h3>Player Names</h3>
+    <div id="nameInputs"></div>
+    <input class="player-name" id="liberoInput" placeholder="Libero">
+    <button onclick="rotatePlayers()" id="rotateBtn">Rotate ↻</button>
+    <button onclick="saveLineup()">Save Lineup</button>
+    <button onclick="loadLineup()">Load Lineup</button>
+  </div>
+
+  <div id="court">
+    <div class="player" id="p0">Setter</div>
+    <div class="player" id="p1">Spiker</div>
+    <div class="player" id="p2">Spiker</div>
+    <div class="player" id="p3">Setter</div>
+    <div class="player" id="p4">Spiker</div>
+    <div class="player" id="p5">Spiker</div>
+    <div class="player libero" id="libero" style="bottom: 10px; left: 10px;">Libero</div>
+  </div>
+
+  <script>
+    const positions = [
+      { top: '50px', left: '150px' },
+      { top: '50px', left: '270px' },
+      { top: '50px', left: '390px' },
+      { top: '200px', left: '390px' },
+      { top: '200px', left: '270px' },
+      { top: '200px', left: '150px' }
+    ];
+
+    // Player data: {name: "", role: "setter" or "spiker"}
+    let players = [
+      {name: "", role: "setter"},
+      {name: "", role: "spiker"},
+      {name: "", role: "spiker"},
+      {name: "", role: "setter"},
+      {name: "", role: "spiker"},
+      {name: "", role: "spiker"}
+    ];
+
+    let liberoName = "";
+    const nameInputsDiv = document.getElementById('nameInputs');
+    const liberoInput = document.getElementById('liberoInput');
+    const liberoElement = document.getElementById('libero');
+    let isRotating = false;
+
+    // Initialize players
+    function initPlayers() {
+      // Regular players
+      for (let i = 0; i < 6; i++) {
+        const el = document.getElementById(`p${i}`);
+        applyPosition(el, positions[i]);
+        el.className = `player ${players[i].role}`;
+        el.textContent = players[i].name || (players[i].role === 'setter' ? 'Setter' : 'Spiker');
+
+        // Add input field
+        const input = document.createElement('input');
+        input.className = 'player-name';
+        input.placeholder = `Player ${i + 1}`;
+        input.dataset.index = i;
+        input.value = players[i].name;
+        input.addEventListener('input', (e) => {
+          const index = e.target.dataset.index;
+          players[index].name = e.target.value;
+          document.getElementById(`p${index}`).textContent = 
+            e.target.value || (players[index].role === 'setter' ? 'Setter' : 'Spiker');
+        });
+        nameInputsDiv.appendChild(input);
+
+        // Click to edit name
+        el.addEventListener('click', () => {
+          if (isRotating) return;
+          const name = prompt("Enter name for player:", players[i].name);
+          if (name !== null) {
+            players[i].name = name;
+            el.textContent = name || (players[i].role === 'setter' ? 'Setter' : 'Spiker');
+            nameInputsDiv.querySelectorAll('input')[i].value = name;
+          }
+        });
+      }
+
+      // Libero setup
+      liberoInput.addEventListener('input', (e) => {
+        liberoName = e.target.value;
+        liberoElement.textContent = liberoName || "Libero";
+      });
+
+      liberoElement.addEventListener('click', () => {
+        if (isRotating) return;
+        const name = prompt("Enter name for libero:", liberoName);
+        if (name !== null) {
+          liberoName = name;
+          liberoElement.textContent = name || "Libero";
+          liberoInput.value = name;
+        }
+      });
+    }
+
+    function applyPosition(element, position) {
+      element.style.top = position.top;
+      element.style.left = position.left;
+    }
+
+    async function rotatePlayers() {
+      if (isRotating) return;
+      isRotating = true;
+      
+      // Add animation class to button
+      const rotateBtn = document.getElementById('rotateBtn');
+      rotateBtn.classList.add('rotate-animation');
+      
+      // Add moving class to all players
+      for (let i = 0; i < 6; i++) {
+        document.getElementById(`p${i}`).classList.add('moving');
+      }
+      
+      // Rotate players array clockwise (move last to first)
+      players.unshift(players.pop());
+      
+      // Update all players with new positions
+      for (let i = 0; i < 6; i++) {
+        const el = document.getElementById(`p${i}`);
+        el.className = `player moving ${players[i].role}`;
+        el.textContent = players[i].name || (players[i].role === 'setter' ? 'Setter' : 'Spiker');
+        nameInputsDiv.querySelectorAll('input')[i].value = players[i].name;
+        
+        // Animate to new position
+        applyPosition(el, positions[i]);
+      }
+      
+      // Wait for animation to complete
+      await new Promise(resolve => setTimeout(resolve, 700));
+      
+      // Remove moving class
+      for (let i = 0; i < 6; i++) {
+        document.getElementById(`p${i}`).classList.remove('moving');
+      }
+      
+      // Remove button animation
+      rotateBtn.classList.remove('rotate-animation');
+      isRotating = false;
+    }
+
+    function saveLineup() {
+      const lineupData = {
+        players: players,
+        libero: liberoName
+      };
+      localStorage.setItem('volleyball_lineup', JSON.stringify(lineupData));
+      alert('Lineup saved!');
+    }
+
+    function loadLineup() {
+      const savedData = JSON.parse(localStorage.getItem('volleyball_lineup'));
+      if (savedData) {
+        players = savedData.players || players;
+        liberoName = savedData.libero || "";
+        
+        // Update regular players
+        for (let i = 0; i < 6; i++) {
+          const el = document.getElementById(`p${i}`);
+          el.className = `player ${players[i].role}`;
+          el.textContent = players[i].name || (players[i].role === 'setter' ? 'Setter' : 'Spiker');
+          nameInputsDiv.querySelectorAll('input')[i].value = players[i].name;
+        }
+        
+        // Update libero
+        liberoElement.textContent = liberoName || "Libero";
+        liberoInput.value = liberoName;
+      } else {
+        alert('No saved lineup found.');
+      }
+    }
+
+    // Initialize the app
+    initPlayers();
+  </script>
+</body>
+</html>
