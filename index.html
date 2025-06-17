@@ -2,32 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" href="imgs\maupet.gif" type = "image/x-icon">
+  <link rel="icon" href="imgs\maupet.gif" type="image/x-icon">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="description" content="faive 2025, sponsored by chatgpt">
-  <title>i love china</title>  <style>
+  <title>i love china</title>
+  <style>
+    :root {
+      --bg-color: #1e1e1e;
+      --sidebar-color: #2a2a2a;
+      --court-color: #333;
+      --border-color: #fff;
+      --text-color: #ffffff;
+      --input-bg: #444;
+      --button-bg: #555;
+      --button-hover: #666;
+    }
+
+    .light-mode {
+      --bg-color: #f4f4f4;
+      --sidebar-color: #e0e0e0;
+      --court-color: #d0f0d0;
+      --border-color: #333;
+      --text-color: #000000;
+      --input-bg: #ffffff;
+      --button-bg: #e0e0e0;
+      --button-hover: #d0d0d0;
+    }
+
     body {
       display: flex;
       font-family: sans-serif;
       margin: 0;
       padding: 0;
-      background: #1e1e1e;
-      color: #ffffff;
+      background: var(--bg-color);
+      color: var(--text-color);
+      transition: background 0.3s, color 0.3s;
     }
+
     #sidebar {
       width: 200px;
       padding: 20px;
-      background: #2a2a2a;
+      background: var(--sidebar-color);
+      transition: background 0.3s;
     }
+
     #court {
       position: relative;
       width: 600px;
       height: 400px;
       margin: 50px auto;
-      background: #333;
-      border: 4px solid #fff;
+      background: var(--court-color);
+      border: 4px solid var(--border-color);
       overflow: hidden;
+      transition: background 0.3s, border-color 0.3s;
     }
+
     .player {
       position: absolute;
       width: 60px;
@@ -43,54 +72,83 @@
       box-shadow: 0 3px 5px rgba(0,0,0,0.2);
       transform: translateZ(0);
     }
+
     .player.moving {
       transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
       z-index: 10;
     }
+
     .setter {
       background: orange !important;
     }
+
     .spiker {
       background: lightblue !important;
     }
+
     .libero {
       background: lightgreen !important;
     }
+
     input.player-name {
       display: block;
       margin-bottom: 10px;
       width: 100%;
-      background: #444;
-      color: white;
+      background: var(--input-bg);
+      color: var(--text-color);
       border: none;
       padding: 5px;
       border-radius: 3px;
+      transition: background 0.3s, color 0.3s;
     }
+
     button {
       margin-top: 10px;
       width: 100%;
       padding: 8px;
-      background: #555;
-      color: white;
+      background: var(--button-bg);
+      color: var(--text-color);
       border: none;
       cursor: pointer;
       border-radius: 3px;
       transition: background 0.2s;
     }
+
     button:hover {
-      background: #666;
+      background: var(--button-hover);
     }
+
     @keyframes pulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.05); }
       100% { transform: scale(1); }
     }
+
     .rotate-animation {
       animation: pulse 0.5s ease;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--button-bg);
+      color: var(--text-color);
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .theme-toggle:hover {
+      background: var(--button-hover);
     }
   </style>
 </head>
 <body>
+  <button style="width: 4%;" class="theme-toggle" id="themeToggle">🌙 Dark</button>
+
   <div id="sidebar">
     <h3>Player Names</h3>
     <div id="nameInputs"></div>
@@ -134,7 +192,9 @@
     const nameInputsDiv = document.getElementById('nameInputs');
     const liberoInput = document.getElementById('liberoInput');
     const liberoElement = document.getElementById('libero');
+    const themeToggle = document.getElementById('themeToggle');
     let isRotating = false;
+    let isDarkMode = true;
 
     // Initialize players
     function initPlayers() {
@@ -186,11 +246,27 @@
           liberoInput.value = name;
         }
       });
+
+      // Theme toggle setup
+      themeToggle.addEventListener('click', toggleTheme);
     }
 
     function applyPosition(element, position) {
       element.style.top = position.top;
       element.style.left = position.left;
+    }
+
+    function toggleTheme() {
+      isDarkMode = !isDarkMode;
+      if (isDarkMode) {
+        document.documentElement.classList.remove('light-mode');
+        themeToggle.textContent = "🌙 Dark";
+      } else {
+        document.documentElement.classList.add('light-mode');
+        themeToggle.textContent = "☀️ Light";
+      }
+      // Save theme preference
+      localStorage.setItem('themePreference', isDarkMode ? 'dark' : 'light');
     }
 
     async function rotatePlayers() {
@@ -236,7 +312,8 @@
     function saveLineup() {
       const lineupData = {
         players: players,
-        libero: liberoName
+        libero: liberoName,
+        theme: isDarkMode ? 'dark' : 'light'
       };
       localStorage.setItem('volleyball_lineup', JSON.stringify(lineupData));
       alert('Lineup saved!');
@@ -259,6 +336,18 @@
         // Update libero
         liberoElement.textContent = liberoName || "Libero";
         liberoInput.value = liberoName;
+
+        // Update theme if saved
+        if (savedData.theme) {
+          isDarkMode = savedData.theme === 'dark';
+          if (!isDarkMode) {
+            document.documentElement.classList.add('light-mode');
+            themeToggle.textContent = "☀️ Light";
+          } else {
+            document.documentElement.classList.remove('light-mode');
+            themeToggle.textContent = "🌙 Dark";
+          }
+        }
       } else {
         alert('No saved lineup found.');
       }
@@ -266,6 +355,14 @@
 
     // Initialize the app
     initPlayers();
+
+    // Check for saved theme preference
+    const savedTheme = localStorage.getItem('themePreference');
+    if (savedTheme === 'light') {
+      isDarkMode = false;
+      document.documentElement.classList.add('light-mode');
+      themeToggle.textContent = "☀️ Light";
+    }
   </script>
 </body>
 </html>
